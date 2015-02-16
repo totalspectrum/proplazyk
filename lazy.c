@@ -6,6 +6,11 @@
 #include <stdlib.h>
 #include "lazy.h"
 
+#ifdef SMALL
+#define NUMCELLS (6*1024)
+#define ROOT_STACK_SIZE 512
+#endif
+
 // number of cells to allocate
 #ifndef NUMCELLS
 #define NUMCELLS (8*1024*1024)
@@ -134,6 +139,8 @@ gc_sweep(void)
 static void gc()
 {
     int i;
+
+    gc_mark(g_root);
     for (i = 0; i < root_stack_top; i++) {
         gc_mark(root_stack[i]);
     }
@@ -432,8 +439,8 @@ apply_S2(Cell *r, Cell *self, Cell *z)
 Cell *
 partial_apply_primitive(Cell *A)
 {
-  Cell *lhs = getleft(A);
-  Cell *rhs = getright(A);
+    Cell *lhs = getleft(A);
+    Cell *rhs = getright(A);
     CellType t = gettype(lhs);
     CellFunc *f = NULL;
 
@@ -466,6 +473,8 @@ partial_eval(Cell *node)
     Cell *lhs, *rhs;
     Cell *cur;
 
+    push_root(node);
+
     cur = node;
     prev = 0;
 
@@ -490,6 +499,8 @@ partial_eval(Cell *node)
 	  setleft(prev, cur);
 	}
     }
+
+    pop_root();
     return cur;
 }
 
@@ -525,6 +536,8 @@ getintvalue(Cell *X)
     Cell *a1, *a2;
     Cell *zero;
 
+    push_root(X);
+
     // want to evaluate X as a number, so
     //  ((X inc) 0)
     a1 = alloc_cell();
@@ -537,7 +550,6 @@ getintvalue(Cell *X)
     mkapply(a2, X, inc);
     mkapply(a1, a2, zero);
 
-    push_root(a1);
     a1 = partial_eval(a1);
     if (gettype(a1) != CT_NUM) {
         fatal("getintval evaluated to a non-integer");
