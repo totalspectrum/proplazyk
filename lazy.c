@@ -4,12 +4,14 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "lazy.h"
+
+//#define SMALL
 
 #ifdef SMALL
 #define NUMCELLS (6*1024)
-#define ROOT_STACK_SIZE 512
+#define ROOT_STACK_SIZE 300
 #endif
+#include "lazy.h"
 
 // number of cells to allocate
 #ifndef NUMCELLS
@@ -277,9 +279,9 @@ Inc_func(Cell *r, Cell *self, Cell *rhs)
     int n;
 
     while (gettype(rhs) == CT_A_PAIR) {
-      push_root(rhs);
-      rhs = partial_eval(rhs);
-      pop_root();
+        push_root(rhs);
+        rhs = partial_eval(rhs);
+        pop_root();
     }
 
     if (gettype(rhs) != CT_NUM) {
@@ -386,7 +388,7 @@ apply_NumPair(Cell *r, Cell *self, Cell *rhs)
 {
   Cell *N = getleft(self);
   Cell *F = getright(self);
-  Cell *A, *Asub, *N_1_x, *N_1;
+  Cell *Asub, *N_1_x, *N_1;
   int n;
 
   if (gettype(N) != CT_NUM) {
@@ -470,7 +472,7 @@ Cell *
 partial_eval(Cell *node)
 {
     Cell *prev;
-    Cell *lhs, *rhs;
+    Cell *lhs;
     Cell *cur;
 
     push_root(node);
@@ -586,10 +588,26 @@ eval_loop()
 // this parses a file into a cell
 //
 
+Cell *cK;
+Cell *cS;
+Cell *cI;
+
 void
-parse_file(Cell *cell, FILE *f)
+init_parse()
+{
+    cK = alloc_cell();
+    cS = alloc_cell();
+    cI = alloc_cell();
+    mkfunc(cK, &K_func, NULL);
+    mkfunc(cS, &S_func, NULL);
+    mknum(cI, 1);
+}
+
+Cell *
+parse_file(FILE *f)
 {
     int c;
+    Cell *r;
 
     // skip comments and newlines
     c = fgetc(f);
@@ -618,32 +636,38 @@ parse_file(Cell *cell, FILE *f)
             c = fgetc(f);
         }
         ungetc(c, f);
-        mknum(cell, val);
+        r = alloc_cell();
+        mknum(r, val);
+        return r;
     } else {
         switch (c) {
         case '`':
         {
-            Cell *x = alloc_cell();
-            Cell *y = alloc_cell();
-            mkapply(cell, x, y);
-            parse_file(x, f);
-            parse_file(y, f);
-            break;
+            Cell *A = alloc_cell();
+            Cell *x, *y;
+
+            x = parse_file(f);
+            push_root(x);
+            y = parse_file(f);
+            pop_root();
+            mkapply(A, x, y);
+            return A;
         }
         case 'k': case 'K':
-            mkfunc(cell, &K_func, NULL);
+            return cK;
             break;
         case 's': case 'S':
-            mkfunc(cell, &S_func, NULL);
+            return cS;
             break;
         case 'i': case 'I':
-            mknum(cell, 1);
+            return cI;
             break;
         default:
             fprintf(stderr, "Invalid character %c\n", c);
             abort();
         }
     }
+    return NULL;
 }
 
 static void
@@ -712,8 +736,8 @@ main(int argc, char **argv)
         perror(argv[1]);
         return 1;
     }
-    g_root = alloc_cell();
-    parse_file(g_root, f);
+    init_parse();
+    g_root = parse_file(f);
 
     // append a lazy read
     {
