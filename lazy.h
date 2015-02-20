@@ -2,11 +2,10 @@
 #define LAZY_H
 //
 // types of expression evaluation:
-// A = apply, S2 = 
+// A = apply
 //
 //  (A (K x)) -> K1_x
 //  (A (K1_x y)) -> x (the one saved in K1 x
-//  (A (Y x)) -> (A (x (A (Y x))))
 //  (A (N x))  -> (A (x (A (N-1 x))))
 //  (A (S x)) -> S1_x
 //  (A (S1_x y)) -> (S2 (x y))
@@ -14,7 +13,7 @@
 //
 #include <stdbool.h>
 
-typedef enum CellType { CT_A_PAIR, CT_S2_PAIR, CT_NUM_PAIR, CT_FUNC, CT_NUM, CT_FREE, CT_PENDING } CellType;
+typedef enum CellType { CT_A_PAIR, CT_S2_PAIR, CT_C2_PAIR, CT_NUM_PAIR, CT_FUNC, CT_NUM, CT_FREE, CT_PENDING } CellType;
 typedef struct cell Cell;
 
 //
@@ -39,23 +38,16 @@ struct func {
 };
 
 struct cell {
-#if 0
-    unsigned int type:7;
-    unsigned int used:1;
-#else
     CellType type;
     unsigned int used;
-#endif
     union {
         Pair p;
         Func f;
         unsigned int n;
     } u;
-    Cell *stack;
 };
 
 static inline CellType gettype(Cell *c) { return (CellType)c->type; }
-static inline Cell *getstack(Cell *c) { return c->stack; }
 static inline Cell *getleft(Cell *c) { return c->u.p.left; }
 static inline Cell *getright(Cell *c) { return c->u.p.right; }
 static inline CellFunc *getfunc(Cell *c) { return c->u.f.func; }
@@ -64,7 +56,6 @@ static inline unsigned int getnum(Cell *c) { return c->u.n; }
 static inline bool getused(Cell *c) { return c->used != 0; }
 
 static inline void settype(Cell *c, CellType k) { c->type = (unsigned int)k; }
-static inline void setstack(Cell *c, Cell *x) { c->stack = x; }
 static inline void setleft(Cell *c, Cell *x) { c->u.p.left = x; }
 static inline void setright(Cell *c, Cell *x) { c->u.p.right = x; }
 static inline void setfunc(Cell *c, CellFunc *f) { c->u.f.func = f; }
@@ -75,5 +66,8 @@ static inline void setused(Cell *c, bool yes) { c->used = yes ? 1 : 0; }
 /* for freshly allocated cells that should not be reclaimed by gc */
 static inline void setpending(Cell *c) { c->type = CT_PENDING; }
 static inline bool ispending(Cell *c) { return (c->type == CT_PENDING); }
+
+#define setstack(c, x) setright(c, x)
+#define getstack(c) getright(c)
 
 #endif

@@ -41,7 +41,6 @@ static Cell mem[NUMCELLS];
 static Cell *free_list;
 
 static void gc(void);
-static inline void markused(Cell *c) { c->used = 1; }
 
 void
 fatal(const char *msg) {
@@ -88,6 +87,7 @@ gc_mark(Cell *root)
     case CT_A_PAIR:
     case CT_S2_PAIR:
     case CT_NUM_PAIR:
+    case CT_C2_PAIR:
         left = getleft(root);
         right = getright(root);
         if (left) gc_mark(left);
@@ -185,6 +185,7 @@ mkpair(Cell *c, Cell *X, Cell *Y, CellType t)
     setright(c, Y);
 }
 #define mks2(c, x, y) mkpair(c, x, y, CT_S2_PAIR)
+#define mkc2(c, x, y) mkpair(c, x, y, CT_C2_PAIR)
 #define mkapply(c, x, y) mkpair(c, x, y, CT_A_PAIR)
 #define mknumpair(c, x, y) mkpair(c, x, y, CT_NUM_PAIR)
 
@@ -298,30 +299,45 @@ Inc_func(Cell *r, Cell *self, Cell *rhs)
 // cons is represented by (lambda (f) (f X Y))
 // which is then applied to either the car function (K) or cdr (KI)
 // \f.``fXY
-// (cons X Y) becomes ``s``si`kX`kY
-//            or      ( ( s [ (s i) (k X) ] (k Y) ) )
+// we simplify this with a special C2 pair internally
 //
-// NOTE: Cons_func allocates 5 cells internally and sets some
-// cell types, so it must be called *after* all allocations
-// but *before* setting types for those allocations
 //
 Cell *
 Cons_func(Cell *r, Cell *X, Cell *Y)
 {
-    Cell *sb;
-    Cell *kx, *ky;
-    Cell *one;
+    mkc2(r, X, Y);
+    return r;
+}
 
-    kx = alloc_cell();
-    ky = alloc_cell();
-    sb = alloc_cell();
-    one = alloc_cell();
+Cell *
+C1_func(Cell *r, Cell *self, Cell *rhs)
+{
+    return Cons_func(r, getarg(self), rhs);
+}
 
-    mknum(one, 1);
-    mkfunc(kx, K1_func, X);
-    mkfunc(ky, K1_func, Y);
-    mks2(sb, one, kx);
-    mks2(r, sb, ky);
+Cell *
+C_func(Cell *r, Cell *self, Cell *rhs)
+{
+    mkfunc(r, &C1_func, rhs);
+    return r;
+}
+
+//
+// a cons C2(X,Y) applied to a func f
+// produces (fX)Y
+//
+// so ```Cxyf -> ``fxy
+//
+Cell *
+apply_C2(Cell *r, Cell *self, Cell *f)
+{
+    Cell *A;
+    Cell *x = getleft(self);
+    Cell *y = getright(self);
+
+    A = alloc_cell();
+    mkapply(A, f, x);
+    mkapply(r, A, y);
     return r;
 }
 
@@ -449,6 +465,9 @@ partial_apply_primitive(Cell *A)
     switch (t) {
     case CT_S2_PAIR:
         f = apply_S2;
+        break;
+    case CT_C2_PAIR:
+        f = apply_C2;
         break;
     case CT_NUM_PAIR:
         f = apply_NumPair;
@@ -591,15 +610,18 @@ eval_loop()
 Cell *cK;
 Cell *cS;
 Cell *cI;
+Cell *cC;
 
 void
 init_parse()
 {
     cK = alloc_cell();
     cS = alloc_cell();
+    cC = alloc_cell();
     cI = alloc_cell();
     mkfunc(cK, &K_func, NULL);
     mkfunc(cS, &S_func, NULL);
+    mkfunc(cC, &C_func, NULL);
     mknum(cI, 1);
 }
 
@@ -662,6 +684,9 @@ parse_file(FILE *f)
         case 'i': case 'I':
             return cI;
             break;
+        case 'c': case 'C':
+            return cC;
+            break;
         default:
             fprintf(stderr, "Invalid character %c\n", c);
             abort();
@@ -690,16 +715,25 @@ PrintTree_1(Cell *cell, int top)
         PrintTree_1(getleft(cell), 0);
         PrintTree_1(getright(cell), 0);
         break;
+    case CT_C2_PAIR:
+        printf("``C");
+        PrintTree_1(getleft(cell), 0);
+        PrintTree_1(getright(cell), 0);
+        break;
     case CT_FUNC:
         fn = getfunc(cell);
         if (fn == K_func) {
             printf("K");
         } else if (fn == S_func) {
             printf("S");
+        } else if (fn == C_func) {
+            printf("C");
         } else if (fn == K1_func) {
             printf("`K"); PrintTree_1(getarg(cell), 0);
         } else if (fn == S1_func) {
             printf("`S"); PrintTree_1(getarg(cell), 0);
+        } else if (fn == C1_func) {
+            printf("`C"); PrintTree_1(getarg(cell), 0);
 	} else if (fn == KI_func) {
 	    printf("`KI");
 	} else if (fn == Inc_func) {
