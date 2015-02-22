@@ -10,10 +10,13 @@ Cell *partial_eval(Cell *node);
 //
 // simple memory allocator
 //
+
+#ifndef RUNTIME
 // main tree
 Cell *g_root;
+Cell mem[NUMCELLS];
+#endif
 
-static Cell mem[NUMCELLS];
 static Cell *free_list;
 
 static void gc(void);

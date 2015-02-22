@@ -60,8 +60,8 @@ void fatal(const char *msg);
 void PrintTree(Cell *t);
 
 #ifdef SMALL
-#define NUMCELLS (5*1024)
-#define ROOT_STACK_SIZE 300
+#define NUMCELLS (6000)
+#define ROOT_STACK_SIZE 256
 #endif
 
 // number of cells to allocate
@@ -73,7 +73,6 @@ void PrintTree(Cell *t);
 #define ROOT_STACK_SIZE 2560
 #endif
 
-extern Cell *g_root;
 extern Cell *alloc_cell(void);
 extern void push_root(Cell *);
 extern Cell *pop_root();
@@ -103,7 +102,15 @@ CellFunc Read_func;
 
 void init_parse();
 
-#ifndef RUNTIME
+#ifdef RUNTIME
+#define BASEADDR 8192
+
+#define g_root *((Cell **)BASEADDR)
+#define mem ((Cell *)(BASEADDR+4))
+
+#else
+extern Cell *g_root;
+extern Cell mem[];
 Cell *parse_part(FILE *f);
 Cell *parse_whole(FILE *f);
 #endif

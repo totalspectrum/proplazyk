@@ -1,4 +1,5 @@
 FullDuplexSerial.[ch]
+*.bin
 *.binary
 *.lazy
 *.elf
