@@ -13,7 +13,16 @@
 //
 #include <stdbool.h>
 
-typedef enum CellType { CT_A_PAIR, CT_S2_PAIR, CT_C2_PAIR, CT_NUM_PAIR, CT_FUNC, CT_NUM, CT_FREE, CT_PENDING } CellType;
+typedef enum CellType { 
+    CT_FREE = 0,
+    CT_A_PAIR = 1, 
+    CT_S2_PAIR = 2,
+    CT_C2_PAIR = 3,
+    CT_NUM_PAIR = 4,
+    CT_FUNC = 5,
+    CT_NUM = 6,
+    CT_PENDING = 7, 
+} CellType;
 
 #ifdef __propeller__
 #include "propeller-cell.h"
@@ -36,13 +45,15 @@ extern FullDuplexSerial ser;
 
 #define putstr(x) FullDuplexSerial_str(&ser, (int32_t)(x))
 #define puthex(x) FullDuplexSerial_hex(&ser, (int32_t)(x), 8)
-#define putchar(x) FullDuplexSerial_tx(&ser, x)
-#define getchar() FullDuplexSerial_rx(&ser)
+#define putch(x) FullDuplexSerial_tx(&ser, x)
+#define getch() FullDuplexSerial_rx(&ser)
 
 #else
 
 #include <stdio.h>
 #define putstr(x) fputs((x), stdout)
+#define getch() getchar()
+#define putch(c) putchar((c))
 #endif
 
 #ifndef RUNTIME
@@ -64,11 +75,13 @@ void PrintTree(Cell *t);
 #define SMALL
 #endif
 
-#define PROPELLER_MEM_BASE 10000
+// here is where our usable area starts
+#define PROPELLER_BASE 8192
+#define PROPELLER_MEM_ADDR (PROPELLER_BASE + 4)
 
 #ifdef SMALL
-#define NUMCELLS (5000)
-#define ROOT_STACK_SIZE 300
+#define NUMCELLS (5500)
+#define ROOT_STACK_SIZE 256
 #endif
 
 // number of cells to allocate
@@ -111,10 +124,8 @@ CellFunc Read_func;
 void init_parse();
 
 #ifdef RUNTIME
-#define BASEADDR PROPELLER_MEM_BASE
-
-#define g_root *((Cell **)BASEADDR)
-#define mem ((Cell *)(BASEADDR+4))
+#define g_root *((Cell **)PROPELLER_BASE)
+#define mem ((Cell *)(PROPELLER_MEM_ADDR))
 
 #else
 extern Cell *g_root;

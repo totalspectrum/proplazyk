@@ -2,8 +2,8 @@
 # targets to build
 #
 
-#PROPGCC=propeller-elf-gcc
-PROPGCC=/opt/parallax.default/bin/propeller-elf-gcc
+PROPGCC=propeller-elf-gcc
+#PROPGCC=/opt/parallax.default/bin/propeller-elf-gcc
 PROPSRCS=lazy.c FullDuplexSerial.c
 
 all: lazy compiler
@@ -26,8 +26,8 @@ runtime.elf: $(PROPSRCS) lazy.h propeller-cell.h
 FullDuplexSerial.c FullDuplexSerial.h: FullDuplexSerial.spin
 	spin2cpp --ccode FullDuplexSerial.spin
 
-fnmap.h:
+fnmap.h: runtime.elf
 	./mkdefs.sh > fnmap.h
 
 clean:
-	rm -f *.elf *.bin *.binary *.o FullDuplexSerial.[ch]
+	rm -f *.elf *.bin *.binary *.o FullDuplexSerial.[ch] fnmap.h

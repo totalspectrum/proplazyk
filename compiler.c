@@ -6,7 +6,13 @@
 #include "lazy.h"
 #include "runtime_bin.h"
 
+//#define DEBUG_COMPILER
+
 Cell mem[NUMCELLS];
+// shifts to extract left/right nodes from a cell
+#define LHS_SHIFT 4
+#define RHS_SHIFT 18
+
 
 uint32_t
 convertCellAddr(Cell *c)
@@ -16,7 +22,7 @@ convertCellAddr(Cell *c)
 
     if (c >= &mem[0] && c <= &mem[NUMCELLS]) {
         idx = c - &mem[0];
-        idx = PROPELLER_MEM_BASE + (idx * 4);
+        idx = PROPELLER_MEM_ADDR + (idx * 4);
         return idx;
     }
     fatal("Unable to convert cell address!");
@@ -43,7 +49,7 @@ convertCellFunc(CellFunc *f)
 uint32_t
 buildpair(uint32_t left, uint32_t right)
 {
-    return (left << 4) | (right << 18);
+    return (left << LHS_SHIFT) | (right << RHS_SHIFT);
 }
 
 uint32_t
@@ -54,7 +60,7 @@ convertCell(Cell *x)
     uint32_t left, right;
 
     t = gettype(x);
-    c = ((uint32_t)t) << 1;
+    c = ((uint32_t)t);
     left = right = 0;
 
     switch (t) {
@@ -79,6 +85,9 @@ convertCell(Cell *x)
     default:
         fatal("Unable to convert cell type");
         break;
+    }
+    if ((c & 0xf) != (int)t) {
+        fatal("bad type conversion");
     }
     return c;
 }
@@ -143,7 +152,15 @@ WriteCells(FILE *f)
     }
 
     for (i = 0; i <= lastnonzero; i++) {
-        WriteLong(f, propcell[i]);
+        cell =propcell[i];
+#ifdef DEBUG_COMPILER
+        printf("Cell %04x: t= %02x left= %04x right= %04x\n",
+               i*4 + PROPELLER_MEM_ADDR,
+               cell & 0x7,
+               ((cell >> LHS_SHIFT) & 0x3fff)<<2,
+               ((cell >> RHS_SHIFT) & 0x3fff)<<2 );
+#endif
+        WriteLong(f, cell);
     }
 }
 
@@ -167,7 +184,9 @@ int main(int argc, char **argv)
     fclose(f);
 
     gc();
-
+#ifdef DEBUG_COMPILER
+    PrintTree(g_root);
+#endif
     outfile = xmalloc(strlen(argv[1]) + 8);
     strcpy(outfile, argv[1]);
     ext = strrchr(outfile, '.');
@@ -185,12 +204,18 @@ int main(int argc, char **argv)
         WriteByte(f, runtime_binary[i]);
     }
     // pad to the runtime base with 0's
-    while (i < PROPELLER_MEM_BASE) {
+    while (i < PROPELLER_BASE) {
         WriteByte(f, 0); i++;
+    }
+    if (i > PROPELLER_BASE) {
+        fatal("Internal error: runtime is too big");
     }
 
     // now write the actual program data
     WriteLong(f, convertCellAddr(g_root));
+#ifdef DEBUG_COMPILER
+    printf("g_root = %x\n", convertCellAddr(g_root));
+#endif
     WriteCells(f);
     // finally write out the checksum
     // this is in the program's heap, but won't be

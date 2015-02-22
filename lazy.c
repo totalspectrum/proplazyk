@@ -5,6 +5,10 @@
 #include <stdlib.h>
 #include "lazy.h"
 
+#ifdef __propeller__
+//#define DEBUG_RUNTIME
+#endif
+
 Cell *partial_eval(Cell *node);
 
 //
@@ -311,8 +315,16 @@ Read_func(Cell *r, Cell *self, Cell *rhs)
     Cell *apply;
     Cell *readf;
 
-    c = getchar();
+#ifdef DBUG_RUNTIME
+    putstr("Read_func\r\n");
+#endif
+    c = getch();
     if (c < 0) c = 256;
+#ifdef DEBUG_RUNTIME
+    putstr("Read_func got: ");
+    puthex(c);
+    putstr("\r\n");
+#endif
     getresult = alloc_cell();
     apply = alloc_cell();
     readf = alloc_cell();
@@ -420,7 +432,7 @@ partial_apply_primitive(Cell *A)
     CellType t = gettype(lhs);
     CellFunc *f = NULL;
 
-#ifdef __propeller__
+#ifdef DEBUG_RUNTIME
     puthex(A); putstr(" "); puthex(lhs); putstr(" "); puthex(rhs);
     putstr(" type="); puthex(t); putstr("\r\n");
 #endif
@@ -441,12 +453,12 @@ partial_apply_primitive(Cell *A)
         f = getfunc(lhs);
         break;
     default:
-#ifdef __propeller__
-        putstr("**"); puthex(t);
-#endif
         fatal("apply_primitive to a non-primitive");
 	return lhs;
     }
+#ifdef DEBUG_RUNTIME
+    putstr("Calling "); puthex(f); putstr("\r\n");
+#endif
     return (*f)(A, lhs, rhs);
 }
 
@@ -558,7 +570,7 @@ eval_loop()
         if (outc >= 256) {
             return outc - 256;
         }
-        putchar(outc);
+        putch(outc);
         g_root = cdr(g_root);
     }
 }
