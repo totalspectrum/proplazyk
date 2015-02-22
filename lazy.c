@@ -547,7 +547,7 @@ eval_loop()
     }
 }
 
-#ifdef RUNTIME
+#ifdef USE_FDS
 FullDuplexSerial ser;
 #endif
 
@@ -555,7 +555,9 @@ int
 main(int argc, char **argv)
 {
 #ifdef RUNTIME
+# ifdef USE_FDS
     FullDuplexSerial_start(&ser, 31, 30, 0, 115200);
+# endif
 #else
     FILE *f;
 

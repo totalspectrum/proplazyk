@@ -32,15 +32,19 @@ typedef enum CellType { CT_A_PAIR, CT_S2_PAIR, CT_C2_PAIR, CT_NUM_PAIR, CT_FUNC,
 
 #include "FullDuplexSerial.h"
 extern FullDuplexSerial ser;
+#define USE_FDS
 
 #define putstr(x) FullDuplexSerial_str(&ser, (int32_t)(x))
 #define putchar(x) FullDuplexSerial_tx(&ser, x)
-#define geetchar() FullDuplexSerial_rx(&ser)
+#define getchar() FullDuplexSerial_rx(&ser)
 
 #else
 
 #include <stdio.h>
-#define putstr(x) printf("%s", (x))
+#define putstr(x) fputs((x), stdout)
+#endif
+
+#ifndef RUNTIME
 #define DEBUG
 #endif
 
