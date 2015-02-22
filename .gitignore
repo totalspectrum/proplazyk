@@ -1,0 +1,5 @@
+FullDuplexSerial.[ch]
+*.binary
+*.lazy
+*.elf
+lazy
