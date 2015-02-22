@@ -28,5 +28,75 @@ typedef enum CellType { CT_A_PAIR, CT_S2_PAIR, CT_C2_PAIR, CT_NUM_PAIR, CT_FUNC,
 #define setpending(c) settype(c, CT_PENDING)
 #define ispending(c) (gettype(c) == CT_PENDING)
 
+#ifdef __propeller__
+
+#include "FullDuplexSerial.h"
+#define putstr(x) FullDuplexSerial_str((int32_t)(x))
+#define putchar(x) FullDuplexSerial_tx(x)
+#define geetchar() FullDuplexSerial_rx()
+
+#else
+
+#include <stdio.h>
+#define putstr(x) printf("%s", (x))
+#define DEBUG
+#endif
+
+#ifdef DEBUG
+#define string_(x) #x
+#define string(x) string_(x)
+#define assert(x) if (!(x)) fatal("assert failed: " string(x))
+#else
+#define assert(x)
+#endif
+
+void fatal(const char *msg);
+void PrintTree(Cell *t);
+
+#ifdef SMALL
+#define NUMCELLS (6*1024)
+#define ROOT_STACK_SIZE 300
+#endif
+
+// number of cells to allocate
+#ifndef NUMCELLS
+#define NUMCELLS (8*1024*1024)
+#endif
+
+#ifndef ROOT_STACK_SIZE
+#define ROOT_STACK_SIZE 2560
+#endif
+
+extern Cell *g_root;
+extern Cell *alloc_cell(void);
+extern void push_root(Cell *);
+extern Cell *pop_root();
+
+void mknum(Cell *c, int n);
+void mkpair(Cell *c, Cell *X, Cell *Y, CellType t);
+#define mks2(c, x, y) mkpair(c, x, y, CT_S2_PAIR)
+#define mkc2(c, x, y) mkpair(c, x, y, CT_C2_PAIR)
+#define mkapply(c, x, y) mkpair(c, x, y, CT_A_PAIR)
+#define mknumpair(c, x, y) mkpair(c, x, y, CT_NUM_PAIR)
+
+extern void mkfunc(Cell *c, CellFunc *func, Cell *arg);
+
+//
+// basic CellFuncs
+//
+CellFunc K1_func;
+CellFunc K_func;
+CellFunc KI_func;
+CellFunc S1_func;
+CellFunc S_func;
+CellFunc Inc_func;
+CellFunc Cons_func;
+CellFunc C1_func;
+CellFunc C_func;
+CellFunc Read_func;
+
+void init_parse();
+Cell *parse_part(FILE *f);
+Cell *parse_whole(FILE *f);
 
 #endif

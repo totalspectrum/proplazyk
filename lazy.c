@@ -2,34 +2,10 @@
 // SKN evaluator
 //
 
-#include <stdio.h>
 #include <stdlib.h>
-
-//#define SMALL
-
-#ifdef SMALL
-#define NUMCELLS (6*1024)
-#define ROOT_STACK_SIZE 300
-#endif
 #include "lazy.h"
 
-// number of cells to allocate
-#ifndef NUMCELLS
-#define NUMCELLS (8*1024*1024)
-#endif
-
-#ifndef ROOT_STACK_SIZE
-#define ROOT_STACK_SIZE 2560
-#endif
-
-void fatal(const char *msg);
-#define string_(x) #x
-#define string(x) string_(x)
-#define assert(x) if (!(x)) fatal("assert failed: " string(x))
-
 Cell *partial_eval(Cell *node);
-static void PrintTree_1(Cell *t, int val);
-void PrintTree(Cell *t) { PrintTree_1(t, 1); }
 
 //
 // simple memory allocator
@@ -44,7 +20,7 @@ static void gc(void);
 
 void
 fatal(const char *msg) {
-    fprintf(stderr, "FATAL: %s\n", msg);
+    putstr(msg); putstr("\n");
     abort();
 }
 
@@ -149,7 +125,7 @@ static void gc()
     gc_sweep();
 }
 
-static Cell *alloc_cell() {
+Cell *alloc_cell() {
     Cell *next = free_list;
     if (!next) {
         gc();
@@ -184,10 +160,6 @@ mkpair(Cell *c, Cell *X, Cell *Y, CellType t)
     setleft(c, X);
     setright(c, Y);
 }
-#define mks2(c, x, y) mkpair(c, x, y, CT_S2_PAIR)
-#define mkc2(c, x, y) mkpair(c, x, y, CT_C2_PAIR)
-#define mkapply(c, x, y) mkpair(c, x, y, CT_A_PAIR)
-#define mknumpair(c, x, y) mkpair(c, x, y, CT_NUM_PAIR)
 
 //
 // make a cell into a function
@@ -198,26 +170,6 @@ mkfunc(Cell *c, CellFunc *func, Cell *arg)
     settype(c, CT_FUNC);
     setfunc(c, func);
     setarg(c, arg);
-}
-
-//
-// beware of using these alloc functions -- the results will be dangling
-// if you use any other allocs before binding them into a rooted tree
-//
-Cell *
-alloc_func(CellFunc *func, Cell *arg)
-{
-  Cell *r = alloc_cell();
-  mkfunc(r, func, arg);
-  return r;
-}
-
-Cell *
-alloc_num(int n)
-{
-  Cell *r = alloc_cell();
-  mknum(r, n);
-  return r;
 }
 
 //
@@ -392,9 +344,6 @@ apply_Num(Cell *r, Cell *self, Cell *rhs)
     if (n == 0) {
         mknum(r, 1); return r;
     }
-    if (n == 1) {
-        return rhs;
-    }
     mknumpair(r, self, rhs);
     return r;
 }
@@ -485,8 +434,6 @@ partial_apply_primitive(Cell *A)
     return (*f)(A, lhs, rhs);
 }
 
-int eval_verbose = 0;
-
 Cell *
 partial_eval(Cell *node)
 {
@@ -500,7 +447,6 @@ partial_eval(Cell *node)
     prev = 0;
 
     for(;;) {
-        if (eval_verbose) { PrintTree(cur); }
         while (gettype(cur) == CT_A_PAIR) {
 	    push_root(prev);
             prev = cur;
@@ -601,161 +547,6 @@ eval_loop()
     }
 }
 
-//
-// parsing function
-//
-// this parses a file into a cell
-//
-
-Cell *cK;
-Cell *cS;
-Cell *cI;
-Cell *cC;
-
-void
-init_parse()
-{
-    cK = alloc_cell();
-    cS = alloc_cell();
-    cC = alloc_cell();
-    cI = alloc_cell();
-    mkfunc(cK, &K_func, NULL);
-    mkfunc(cS, &S_func, NULL);
-    mkfunc(cC, &C_func, NULL);
-    mknum(cI, 1);
-}
-
-Cell *
-parse_file(FILE *f)
-{
-    int c;
-    Cell *r;
-
-    // skip comments and newlines
-    c = fgetc(f);
-    for(;;) {
-        if (c == ' ' || c == '\n' || c == '\t') {
-            c = fgetc(f);
-            continue;
-        }
-        if (c == '#') {
-            do {
-                c = fgetc(f);
-            } while (c != '\n' && c > 0);
-            continue;
-        }
-        break;
-    }
-
-    if (c < 0) {
-        fprintf(stderr, "Unexpected EOF\n");
-        abort();
-    }
-    if (c >= '0' && c <= '9') {
-        int val = 0;
-        while (c >= '0' && c <= '9') {
-            val = 10*val + c;
-            c = fgetc(f);
-        }
-        ungetc(c, f);
-        r = alloc_cell();
-        mknum(r, val);
-        return r;
-    } else {
-        switch (c) {
-        case '`':
-        {
-            Cell *A = alloc_cell();
-            Cell *x, *y;
-
-            x = parse_file(f);
-            push_root(x);
-            y = parse_file(f);
-            pop_root();
-            mkapply(A, x, y);
-            return A;
-        }
-        case 'k': case 'K':
-            return cK;
-            break;
-        case 's': case 'S':
-            return cS;
-            break;
-        case 'i': case 'I':
-            return cI;
-            break;
-        case 'c': case 'C':
-            return cC;
-            break;
-        default:
-            fprintf(stderr, "Invalid character %c\n", c);
-            abort();
-        }
-    }
-    return NULL;
-}
-
-static void
-PrintTree_1(Cell *cell, int top)
-{
-    CellFunc *fn;
-    if (!cell) {
-      printf("?");
-      return;
-    }
-    switch(gettype(cell)) {
-    case CT_A_PAIR:
-    case CT_NUM_PAIR:
-        printf("`");
-        PrintTree_1(getleft(cell), 0);
-        PrintTree_1(getright(cell), 0);
-        break;
-    case CT_S2_PAIR:
-        printf("``S");
-        PrintTree_1(getleft(cell), 0);
-        PrintTree_1(getright(cell), 0);
-        break;
-    case CT_C2_PAIR:
-        printf("``C");
-        PrintTree_1(getleft(cell), 0);
-        PrintTree_1(getright(cell), 0);
-        break;
-    case CT_FUNC:
-        fn = getfunc(cell);
-        if (fn == K_func) {
-            printf("K");
-        } else if (fn == S_func) {
-            printf("S");
-        } else if (fn == C_func) {
-            printf("C");
-        } else if (fn == K1_func) {
-            printf("`K"); PrintTree_1(getarg(cell), 0);
-        } else if (fn == S1_func) {
-            printf("`S"); PrintTree_1(getarg(cell), 0);
-        } else if (fn == C1_func) {
-            printf("`C"); PrintTree_1(getarg(cell), 0);
-	} else if (fn == KI_func) {
-	    printf("`KI");
-	} else if (fn == Inc_func) {
-	  printf("+");
-	} else if (fn == Read_func) {
-	  printf("(Read)");
-        } else {
-	    if (getarg(cell)) printf("`");
-            printf("<func:%p>", getfunc(cell));
-            PrintTree_1(getarg(cell), 0);
-        }
-        break;
-    case CT_NUM:
-        printf("(%d)", getnum(cell));
-        break;
-    default:
-        printf("?");
-        break;
-    }
-    if (top) printf("\n");
-}
-
 int
 main(int argc, char **argv)
 {
@@ -770,25 +561,7 @@ main(int argc, char **argv)
         perror(argv[1]);
         return 1;
     }
-    init_parse();
-    g_root = parse_file(f);
+    g_root = parse_whole(f);
 
-    // append a lazy read
-    {
-        Cell *readf;
-        Cell *zero;
-        Cell *a1, *a2;
-
-        zero = alloc_cell();
-        readf = alloc_cell();
-        a1 = alloc_cell();
-        a2 = alloc_cell();
-
-        mknum(zero, 0);
-        mkfunc(readf, Read_func, 0);
-        mkapply(a2, readf, zero);
-        mkapply(a1, g_root, a2);
-        g_root = a1;
-    }
     return eval_loop(g_root);
 }

@@ -1,6 +1,7 @@
 #ifndef CELL_H
 #define CELL_H
 
+#define SMALL
 #include <propeller.h>
 
 typedef union cell Cell;
