@@ -347,6 +347,9 @@ apply_Num(Cell *r, Cell *self, Cell *rhs)
     if (n == 0) {
         mknum(r, 1); return r;
     }
+    if (n == 1) {
+        return rhs;
+    }
     mknumpair(r, self, rhs);
     return r;
 }
