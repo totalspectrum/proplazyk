@@ -10,10 +10,12 @@ all: lazy compiler
 lazy: lazy.c parser.c lazy.h
 	$(CC) -g -o lazy lazy.c parser.c
 
-compiler: runtime.bin
+compiler: runtime_bin.h
 
-runtime.bin: runtime.binary
+runtime_bin.h: runtime.binary
 	dd if=runtime.binary of=runtime.bin conv=sync bs=8192 count=1
+	xxd -i runtime.bin > runtime_bin.h
+	rm -f runtime.bin
 
 runtime.binary: runtime.elf
 	propeller-load -s runtime.elf
