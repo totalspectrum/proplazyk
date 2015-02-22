@@ -59,6 +59,10 @@ extern FullDuplexSerial ser;
 void fatal(const char *msg);
 void PrintTree(Cell *t);
 
+#ifndef INTERPRETER
+#define SMALL
+#endif
+
 #ifdef SMALL
 #define NUMCELLS (6000)
 #define ROOT_STACK_SIZE 256
@@ -76,6 +80,7 @@ void PrintTree(Cell *t);
 extern Cell *alloc_cell(void);
 extern void push_root(Cell *);
 extern Cell *pop_root();
+extern void gc(void);
 
 void mknum(Cell *c, int n);
 void mkpair(Cell *c, Cell *X, Cell *Y, CellType t);

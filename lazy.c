@@ -14,12 +14,13 @@ Cell *partial_eval(Cell *node);
 #ifndef RUNTIME
 // main tree
 Cell *g_root;
+#endif
+
+#ifdef INTERPRETER
 Cell mem[NUMCELLS];
 #endif
 
 static Cell *free_list;
-
-static void gc(void);
 
 void
 fatal(const char *msg) {
@@ -115,9 +116,9 @@ gc_sweep(void)
 }
 
 //
+// garbage collection function
 //
-//
-static void gc()
+void gc(void)
 {
     int i;
 
