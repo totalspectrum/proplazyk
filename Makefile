@@ -8,14 +8,14 @@ PROPSRCS=lazy.c FullDuplexSerial.c
 all: lazy compiler
 
 lazy: lazy.c parser.c lazy.h
-	$(CC) -g -o lazy lazy.c parser.c
+	$(CC) -g -DINTERPRETER -o lazy lazy.c parser.c
 
-compiler: runtime_bin.h
+compiler: compiler.c parser.c lazy.c lazy.h runtime_bin.h
+	$(CC) -g -o $@ compiler.c parser.c lazy.c
 
 runtime_bin.h: runtime.binary
 	dd if=runtime.binary of=runtime.bin conv=sync bs=8192 count=1
 	xxd -i runtime.bin > runtime_bin.h
-	rm -f runtime.bin
 
 runtime.binary: runtime.elf
 	propeller-load -s runtime.elf
