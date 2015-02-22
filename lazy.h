@@ -64,7 +64,7 @@ void PrintTree(Cell *t);
 #endif
 
 #ifdef SMALL
-#define NUMCELLS (6000)
+#define NUMCELLS (5800)
 #define ROOT_STACK_SIZE 256
 #endif
 

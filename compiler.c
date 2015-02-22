@@ -107,15 +107,24 @@ WriteLong(FILE *f, uint32_t x)
     }
 }
 
+static uint32_t propcell[NUMCELLS];
+
 void
 WriteCells(FILE *f)
 {
     int i;
     uint32_t cell;
+    int lastnonzero;
+    lastnonzero = 0;
 
     for (i = 0; i < NUMCELLS; i++) {
         cell = convertCell(&mem[i]);
-        WriteLong(f, cell);
+        if (cell != 0) lastnonzero = i;
+        propcell[i] = cell;
+    }
+
+    for (i = 0; i <= lastnonzero; i++) {
+        WriteLong(f, propcell[i]);
     }
 }
 

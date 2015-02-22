@@ -95,7 +95,9 @@ gc_sweep(void)
     int pending_count = 0;
 
     free_list = NULL;
-    for (i = 0; i < NUMCELLS; i++) {
+    // count down so that the free list starts at the bottom of
+    // memory; this makes optimizing the compiler output easier
+    for (i = NUMCELLS-1; i >= 0; --i) {
         cur = &mem[i];
         used = getused(cur);
         if (used) {
