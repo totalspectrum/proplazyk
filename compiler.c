@@ -6,7 +6,6 @@
 #include "lazy.h"
 #include "runtime_bin.h"
 
-#define MEM_OFFSET (8196)
 Cell mem[NUMCELLS];
 
 uint32_t
@@ -17,7 +16,7 @@ convertCellAddr(Cell *c)
 
     if (c >= &mem[0] && c <= &mem[NUMCELLS]) {
         idx = c - &mem[0];
-        idx = MEM_OFFSET + (idx * 4);
+        idx = PROPELLER_MEM_BASE + (idx * 4);
         return idx;
     }
     fatal("Unable to convert cell address!");
@@ -42,6 +41,12 @@ convertCellFunc(CellFunc *f)
 #define ADDR(x) (((x)>>2) & 0x3fff)
 
 uint32_t
+buildpair(uint32_t left, uint32_t right)
+{
+    return (left << 4) | (right << 18);
+}
+
+uint32_t
 convertCell(Cell *x)
 {
     CellType t;
@@ -59,8 +64,7 @@ convertCell(Cell *x)
     case CT_NUM_PAIR:
         left = ADDR(convertCellAddr(getleft(x)));
         right = ADDR(convertCellAddr(getright(x)));
-        c |= (left << 18);
-        c |= (right << 4);
+        c |= buildpair(left, right);
         break;
     case CT_NUM:
         c |= (getnum(x) << 4);
@@ -68,8 +72,7 @@ convertCell(Cell *x)
     case CT_FUNC:
         left = ADDR(convertCellFunc(getfunc(x)));
         right = ADDR(convertCellAddr(getarg(x)));
-        c |= (left << 18);
-        c |= (right << 4);
+        c |= buildpair(left, right);
         break;
     case CT_FREE:
         return 0;
@@ -91,6 +94,25 @@ xmalloc(size_t s)
     return r;
 }
 
+//
+// write a single byte, keeping track of the checksum
+// A Propeller binary is expected to have a checksum of 0x14
+// where "checksum" is just the sum of all the bytes in the file
+//
+
+static uint8_t chksum = 0;
+
+void
+WriteByte(FILE *f, uint8_t b)
+{
+    int c;
+    chksum += b;
+    c = fputc(b, f);
+    if (c != b) {
+        fatal("Write error!\n");
+    }
+}
+
 void
 WriteLong(FILE *f, uint32_t x)
 {
@@ -100,10 +122,7 @@ WriteLong(FILE *f, uint32_t x)
     for (i = 0; i < 4; i++) {
         c = (x & 0xff);
         x = x >> 8;
-        c = fputc(c, f);
-        if (c < 0) {
-            fatal("Write error");
-        }
+        WriteByte(f, c);
     }
 }
 
@@ -133,6 +152,7 @@ int main(int argc, char **argv)
     FILE *f;
     char *outfile;
     char *ext;
+    int i;
 
     if (argc != 2) {
         fprintf(stderr, "Usage: compile file.lazy\n");
@@ -160,9 +180,28 @@ int main(int argc, char **argv)
     if (!f) {
         perror(outfile);
     }
-    fwrite(runtime_bin, 1, sizeof(runtime_bin), f);
+    // write out the fixed runtime (interpreter)
+    for (i = 0; i < sizeof(runtime_binary); i++) {
+        WriteByte(f, runtime_binary[i]);
+    }
+    // pad to the runtime base with 0's
+    while (i < PROPELLER_MEM_BASE) {
+        WriteByte(f, 0); i++;
+    }
+
+    // now write the actual program data
     WriteLong(f, convertCellAddr(g_root));
     WriteCells(f);
+    // finally write out the checksum
+    // this is in the program's heap, but won't be
+    // referenced by anything, so it will end up being
+    // garbage collected
+    chksum = 0x14 - chksum;
+    WriteByte(f, chksum);
+    // pad to a longword boundary
+    WriteByte(f, 0);
+    WriteByte(f, 0);
+    WriteByte(f, 0);
 
     fclose(f);
     return 0;

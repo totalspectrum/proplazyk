@@ -24,7 +24,7 @@ static Cell *free_list;
 
 void
 fatal(const char *msg) {
-    putstr(msg); putstr("\n");
+    putstr(msg); putstr("\r\n");
     abort();
 }
 
@@ -420,6 +420,10 @@ partial_apply_primitive(Cell *A)
     CellType t = gettype(lhs);
     CellFunc *f = NULL;
 
+#ifdef __propeller__
+    puthex(A); putstr(" "); puthex(lhs); putstr(" "); puthex(rhs);
+    putstr(" type="); puthex(t); putstr("\r\n");
+#endif
     switch (t) {
     case CT_S2_PAIR:
         f = apply_S2;
@@ -437,6 +441,9 @@ partial_apply_primitive(Cell *A)
         f = getfunc(lhs);
         break;
     default:
+#ifdef __propeller__
+        putstr("**"); puthex(t);
+#endif
         fatal("apply_primitive to a non-primitive");
 	return lhs;
     }

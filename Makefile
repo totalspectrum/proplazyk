@@ -2,7 +2,8 @@
 # targets to build
 #
 
-PROPGCC=propeller-elf-gcc
+#PROPGCC=propeller-elf-gcc
+PROPGCC=/opt/parallax.default/bin/propeller-elf-gcc
 PROPSRCS=lazy.c FullDuplexSerial.c
 
 all: lazy compiler
@@ -14,8 +15,7 @@ compiler: compiler.c parser.c lazy.c lazy.h runtime_bin.h fnmap.h
 	$(CC) -g -o $@ compiler.c parser.c lazy.c
 
 runtime_bin.h: runtime.binary
-	dd if=runtime.binary of=runtime.bin conv=sync bs=8192 count=1
-	xxd -i runtime.bin > runtime_bin.h
+	xxd -i runtime.binary > runtime_bin.h
 
 runtime.binary: runtime.elf
 	propeller-load -s runtime.elf

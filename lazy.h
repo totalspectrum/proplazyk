@@ -35,6 +35,7 @@ extern FullDuplexSerial ser;
 #define USE_FDS
 
 #define putstr(x) FullDuplexSerial_str(&ser, (int32_t)(x))
+#define puthex(x) FullDuplexSerial_hex(&ser, (int32_t)(x), 8)
 #define putchar(x) FullDuplexSerial_tx(&ser, x)
 #define getchar() FullDuplexSerial_rx(&ser)
 
@@ -63,9 +64,11 @@ void PrintTree(Cell *t);
 #define SMALL
 #endif
 
+#define PROPELLER_MEM_BASE 10000
+
 #ifdef SMALL
-#define NUMCELLS (5800)
-#define ROOT_STACK_SIZE 256
+#define NUMCELLS (5000)
+#define ROOT_STACK_SIZE 300
 #endif
 
 // number of cells to allocate
@@ -108,7 +111,7 @@ CellFunc Read_func;
 void init_parse();
 
 #ifdef RUNTIME
-#define BASEADDR 8192
+#define BASEADDR PROPELLER_MEM_BASE
 
 #define g_root *((Cell **)BASEADDR)
 #define mem ((Cell *)(BASEADDR+4))
