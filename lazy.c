@@ -547,9 +547,16 @@ eval_loop()
     }
 }
 
+#ifdef RUNTIME
+FullDuplexSerial ser;
+#endif
+
 int
 main(int argc, char **argv)
 {
+#ifdef RUNTIME
+    FullDuplexSerial_start(&ser, 31, 30, 0, 115200);
+#else
     FILE *f;
 
     if (argc != 2) {
@@ -562,6 +569,7 @@ main(int argc, char **argv)
         return 1;
     }
     g_root = parse_whole(f);
+#endif
 
     return eval_loop(g_root);
 }

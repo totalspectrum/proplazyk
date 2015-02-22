@@ -31,9 +31,11 @@ typedef enum CellType { CT_A_PAIR, CT_S2_PAIR, CT_C2_PAIR, CT_NUM_PAIR, CT_FUNC,
 #ifdef __propeller__
 
 #include "FullDuplexSerial.h"
-#define putstr(x) FullDuplexSerial_str((int32_t)(x))
-#define putchar(x) FullDuplexSerial_tx(x)
-#define geetchar() FullDuplexSerial_rx()
+extern FullDuplexSerial ser;
+
+#define putstr(x) FullDuplexSerial_str(&ser, (int32_t)(x))
+#define putchar(x) FullDuplexSerial_tx(&ser, x)
+#define geetchar() FullDuplexSerial_rx(&ser)
 
 #else
 
@@ -54,7 +56,7 @@ void fatal(const char *msg);
 void PrintTree(Cell *t);
 
 #ifdef SMALL
-#define NUMCELLS (6*1024)
+#define NUMCELLS (5*1024)
 #define ROOT_STACK_SIZE 300
 #endif
 
@@ -96,7 +98,10 @@ CellFunc C_func;
 CellFunc Read_func;
 
 void init_parse();
+
+#ifndef RUNTIME
 Cell *parse_part(FILE *f);
 Cell *parse_whole(FILE *f);
+#endif
 
 #endif
