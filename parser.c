@@ -66,7 +66,7 @@ parse_part(FILE *f)
     if (c >= '0' && c <= '9') {
         int val = 0;
         while (c >= '0' && c <= '9') {
-            val = 10*val + c;
+            val = 10*val + (c-'0');
             c = fgetc(f);
         }
         ungetc(c, f);
