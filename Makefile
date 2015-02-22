@@ -10,7 +10,7 @@ all: lazy compiler
 lazy: lazy.c parser.c lazy.h
 	$(CC) -g -DINTERPRETER -o lazy lazy.c parser.c
 
-compiler: compiler.c parser.c lazy.c lazy.h runtime_bin.h
+compiler: compiler.c parser.c lazy.c lazy.h runtime_bin.h fnmap.h
 	$(CC) -g -o $@ compiler.c parser.c lazy.c
 
 runtime_bin.h: runtime.binary
@@ -25,6 +25,9 @@ runtime.elf: $(PROPSRCS) lazy.h propeller-cell.h
 
 FullDuplexSerial.c FullDuplexSerial.h: FullDuplexSerial.spin
 	spin2cpp --ccode FullDuplexSerial.spin
+
+fnmap.h:
+	./mkdefs.sh > fnmap.h
 
 clean:
 	rm -f *.elf *.bin *.binary *.o FullDuplexSerial.[ch]

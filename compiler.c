@@ -23,6 +23,21 @@ convertCellAddr(Cell *c)
     fatal("Unable to convert cell address!");
 }
 
+#include "fnmap.h"
+uint32_t
+convertCellFunc(CellFunc *f)
+{
+    int i;
+
+    for (i = 0; i < sizeof(fnmap)/sizeof(fnmap[0]); i++) {
+        if (f == fnmap[i].fn) {
+            return fnmap[i].addr;
+        }
+    }
+    fatal("Unable to convert cell function\n");
+    return 0;
+}
+
 // convert Propeller address to 14 bits
 #define ADDR(x) (((x)>>2) & 0x3fff)
 
@@ -49,6 +64,12 @@ convertCell(Cell *x)
         break;
     case CT_NUM:
         c |= (getnum(x) << 4);
+        break;
+    case CT_FUNC:
+        left = ADDR(convertCellFunc(getfunc(x)));
+        right = ADDR(convertCellAddr(getarg(x)));
+        c |= (left << 18);
+        c |= (right << 4);
         break;
     case CT_FREE:
         return 0;
