@@ -4,3 +4,6 @@ FullDuplexSerial.[ch]
 *.lazy
 *.elf
 lazy
+compiler
+fnmap.h
+runtime_bin.h
