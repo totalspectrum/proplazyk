@@ -164,31 +164,62 @@ WriteCells(FILE *f)
     }
 }
 
+int gl_verbose = 0;
+int gl_optimize = 0;
+const char *gl_name = "compile";
+
+static void Usage() {
+    fprintf(stderr, "Usage: %s [-v][-O] file.lazy\n", gl_name);
+    exit(1);
+}
+
+static void parse_options(const char *str)
+{
+    int c;
+    while ((c = *str++) != 0) {
+        switch(c) {
+        case 'v': gl_verbose = 1; break;
+        case 'O': gl_optimize = 1; break;
+        default:
+            Usage();
+            break;
+        }
+    }
+}
+
 int main(int argc, char **argv)
 {
     FILE *f;
+    char *infile;
     char *outfile;
     char *ext;
     int i;
 
-    if (argc != 2) {
-        fprintf(stderr, "Usage: compile file.lazy\n");
-        return 2;
+    gl_name = argv[0];
+    argv++; --argc;
+    while (argv[0] && argv[0][0] == '-') {
+        parse_options(argv[0]+1);
+        argv++; --argc;
     }
-    f = fopen(argv[1], "r");
+    if (argc != 1) {
+        Usage();
+    }
+    infile = argv[0];
+    f = fopen(infile, "r");
     if (!f) {
-        perror(argv[1]);
+        perror(infile);
         return 1;
     }
     g_root = parse_whole(f);
     fclose(f);
 
     gc();
-#ifdef DEBUG_COMPILER
-    PrintTree(g_root);
-#endif
-    outfile = xmalloc(strlen(argv[1]) + 8);
-    strcpy(outfile, argv[1]);
+    if (gl_verbose) {
+        PrintTree(g_root);
+    }
+
+    outfile = xmalloc(strlen(infile) + 8);
+    strcpy(outfile, infile);
     ext = strrchr(outfile, '.');
     if (ext) {
         strcpy(ext, ".binary");

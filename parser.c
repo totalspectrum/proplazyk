@@ -111,6 +111,7 @@ static void
 PrintTree_1(Cell *cell, int top)
 {
     CellFunc *fn;
+    int n;
     if (!cell) {
       printf("?");
       return;
@@ -151,7 +152,7 @@ PrintTree_1(Cell *cell, int top)
 	} else if (fn == Inc_func) {
 	  printf("+");
 	} else if (fn == Read_func) {
-	  printf("(Read)");
+	  printf("R");
         } else {
 	    if (getarg(cell)) printf("`");
             printf("<func:%p>", getfunc(cell));
@@ -159,7 +160,9 @@ PrintTree_1(Cell *cell, int top)
         }
         break;
     case CT_NUM:
-        printf("(%d)", getnum(cell));
+        n = getnum(cell);
+        if (n == 1) printf("i");
+        else printf("%d ", n);
         break;
     default:
         printf("?");
