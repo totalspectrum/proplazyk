@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <ctype.h>
 
 //#define SMALL
 
@@ -53,19 +54,27 @@ getNextChar(const char **s_ptr)
 
     for(;;) {
         c = *s++;
+        // ignore whitespace
         if (c == ' ' || c == '\n' || c == '\t') {
             continue;
         }
+        // ignore comments
         if (c == '#') {
             do {
                 c = *s++;
             } while (c && c != '\n');
             continue;
         }
+
+        // translate from CC style to unlambda style
+        if (c == '(') c = '`';
+        if (c == ')')
+            continue;
+
         break;
     }
     *s_ptr = s;
-    return c;
+    return tolower(c);
 }
 
 //
@@ -98,10 +107,14 @@ struct optimize {
     const char *orig;
     const char *replace;
 } opttab[] = {
-    { "``s`k``s``s`kski``s``s`ksk```sii``s``s`kski", "10" },
-    { "``s``s`ksk```s`s``s`ksk``sii``s``s`kski", "65" },
-    { "```sii```sii``s``s`kski", "256" },
-
+    { "``s`k``s``s`kski``s``s`ksk```sii``s``s`kski", "$0a" },
+    { "```s``s`ksk``s``s`kski``s``s`kski",           "$08" },
+    { "```sii```sii``s``s`kski",                     "$100" /* 256 */},
+    { "```s`s``s`ksk``sii``s``s`kski",               "$40"  /* 64 */},
+    { "``s``s`ksk```sii``s``s`kski",                 "$05" },
+    { "```sii``s``s`kski",                           "$04" },
+    { "``s``s`ksk``s``s`kski",                       "$03" },
+    { "``s``s`kski",                                 "$02" },
 };
 
 #define OPTTAB_SIZE (sizeof(opttab)/sizeof(opttab[0]))
@@ -140,12 +153,20 @@ parse_part_opt(const char **s_ptr, bool opt)
         abort();
     }
 
-    if (c >= '0' && c <= '9') {
+    if (c == '$') {
+        // hex number
         int val = 0;
         const char *s = *s_ptr;
-        while (c >= '0' && c <= '9') {
-            val = 10*val + (c-'0');
-            c = *s++;
+        c = tolower(*s++);
+        for (;;) {
+            if ((c >= '0' && c <= '9')) {
+                val = 16*val + (c-'0');
+            } else if (c >= 'a' && (c <= 'f')) {
+                val = 16*val + (10+(c-'a'));
+            } else {
+                break;
+            }
+            c = tolower(*s++);
         }
         *s_ptr = s - 1;
         r = alloc_cell();
@@ -154,7 +175,6 @@ parse_part_opt(const char **s_ptr, bool opt)
     } else {
         switch (c) {
         case '`':
-        case '(':
         {
             Cell *A;
             Cell *x, *y;
@@ -167,16 +187,16 @@ parse_part_opt(const char **s_ptr, bool opt)
             mkapply(A, x, y);
             return A;
         }
-        case 'k': case 'K':
+        case 'k':
             return cK;
             break;
-        case 's': case 'S':
+        case 's':
             return cS;
             break;
-        case 'i': case 'I':
+        case 'i':
             return cI;
             break;
-        case 'c': case 'C':
+        case 'c':
             return cC;
             break;
         case '+':
@@ -189,10 +209,13 @@ parse_part_opt(const char **s_ptr, bool opt)
     return NULL;
 }
 
+// optimizer setting; off by default
+int gl_optimize = false;
+
 Cell *
 parse_part(const char **s_ptr)
 {
-    return parse_part_opt(s_ptr, true);
+    return parse_part_opt(s_ptr, gl_optimize);
 }
 
 static void
@@ -250,7 +273,7 @@ PrintTree_1(Cell *cell, int top)
     case CT_NUM:
         n = getnum(cell);
         if (n == 1) printf("i");
-        else printf("%d ", n);
+        else printf("$%x ", n);
         break;
     default:
         printf("?");

@@ -164,8 +164,8 @@ WriteCells(FILE *f)
     }
 }
 
-int gl_verbose = 0;
-int gl_optimize = 0;
+bool gl_verbose = false;
+extern bool gl_optimize;
 const char *gl_name = "compile";
 
 static void Usage() {
@@ -178,8 +178,8 @@ static void parse_options(const char *str)
     int c;
     while ((c = *str++) != 0) {
         switch(c) {
-        case 'v': gl_verbose = 1; break;
-        case 'O': gl_optimize = 1; break;
+        case 'v': gl_verbose = true; break;
+        case 'O': gl_optimize = true; break;
         default:
             Usage();
             break;
