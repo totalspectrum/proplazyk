@@ -121,8 +121,6 @@ CellFunc C1_func;
 CellFunc C_func;
 CellFunc Read_func;
 
-void init_parse();
-
 #ifdef RUNTIME
 #define g_root *((Cell **)PROPELLER_BASE)
 #define mem ((Cell *)(PROPELLER_MEM_ADDR))
@@ -133,5 +131,10 @@ extern Cell mem[];
 Cell *parse_part(const char **str);
 Cell *parse_whole(FILE *f);
 #endif
+
+//
+// various options to control the parser
+//
+extern bool gl_optimize;
 
 #endif

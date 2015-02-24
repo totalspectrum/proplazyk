@@ -1,23 +1,19 @@
 //
-// SKN evaluator
+// SKI parser
 //
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
 
-//#define SMALL
-
 #include "lazy.h"
 
-
+// for debugging purposes
 static void PrintTree_1(Cell *t, int val);
 void PrintTree(Cell *t) { PrintTree_1(t, 1); }
 
 //
-// parsing function
-//
-// this parses a file into a cell
+// some constant combinators that we will use later
 //
 
 Cell *cK;
@@ -26,7 +22,11 @@ Cell *cI;
 Cell *cC;
 Cell *cInc;
 
-void
+//
+// initialize the parser
+// this is called automatically by parse_whole()
+//
+static void
 init_parse()
 {
     cK = alloc_cell();
@@ -45,8 +45,11 @@ init_parse()
 //
 // getNextChar: get next significant character,
 // skipping all whitespace
+// This also translates from CC mode things like ((S K) K)
+// to Unlambda mode ``SKK, and converts all letters
+// to lower case.
 //
-int
+static int
 getNextChar(const char **s_ptr)
 {
     const char *s = *s_ptr;
@@ -83,6 +86,7 @@ getNextChar(const char **s_ptr)
 // returns 1 if the strings matched, 0 if not
 // if a match happened, updates s_ptr to point after the match
 // otherwise leaves s_ptr alone
+// This is used by the optimizer to find substrings to replace.
 //
 static int
 match_part(const char **s_ptr, const char *def)
@@ -108,14 +112,14 @@ struct optimize {
     const char *orig;
     const char *replace;
 } opttab[] = {
-    { "``s`k``s``s`kski``s``s`ksk```sii``s``s`kski", "$0a" },
-    { "```s``s`ksk``s``s`kski``s``s`kski",           "$08" },
-    { "```sii```sii``s``s`kski",                     "$100" /* 256 */},
-    { "```s`s``s`ksk``sii``s``s`kski",               "$40"  /* 64 */},
-    { "``s``s`ksk```sii``s``s`kski",                 "$05" },
-    { "```sii``s``s`kski",                           "$04" },
-    { "``s``s`ksk``s``s`kski",                       "$03" },
-    { "``s``s`kski",                                 "$02" },
+    { "``s`k``s``s`kski``s``s`ksk```sii``s``s`kski", "[10]" },
+    { "```s``s`ksk``s``s`kski``s``s`kski",           "[8]" },
+    { "```sii```sii``s``s`kski",                     "[256]" },
+    { "```s`s``s`ksk``sii``s``s`kski",               "[64]"  },
+    { "``s``s`ksk```sii``s``s`kski",                 "[$05]" },
+    { "```sii``s``s`kski",                           "[$04]" },
+    { "``s``s`ksk``s``s`kski",                       "[$03]" },
+    { "``s``s`kski",                                 "[$02]" },
 };
 
 #define OPTTAB_SIZE (sizeof(opttab)/sizeof(opttab[0]))
@@ -154,22 +158,35 @@ parse_part_opt(const char **s_ptr, bool opt)
         abort();
     }
 
-    if (c == '$') {
-        // hex number
+    if (c == '[') {
+        // a number
         int val = 0;
+        int base = 10;
+        int digit;
+
         const char *s = *s_ptr;
         c = tolower(*s++);
+        if (c == '$') {
+            base = 16;
+            c = tolower(*s++);
+        }
         for (;;) {
             if ((c >= '0' && c <= '9')) {
-                val = 16*val + (c-'0');
-            } else if (c >= 'a' && (c <= 'f')) {
-                val = 16*val + (10+(c-'a'));
+                digit = (c-'0');
+            } else if (c >= 'a' && (c <= 'z')) {
+                digit = (10+(c-'a'));
             } else {
                 break;
             }
+            if (digit >= base) break;
+            val = base * val + digit;
             c = tolower(*s++);
         }
-        *s_ptr = s - 1;
+        if (c != ']') {
+            fprintf(stderr, "Unexpected character `%c' while parsing number\n", c);
+            abort();
+        }
+        *s_ptr = s;
         r = alloc_cell();
         mknum(r, val);
         return r;
@@ -211,7 +228,7 @@ parse_part_opt(const char **s_ptr, bool opt)
 }
 
 // optimizer setting; off by default
-int gl_optimize = false;
+bool gl_optimize = false;
 
 Cell *
 parse_part(const char **s_ptr)
@@ -272,7 +289,7 @@ PrintTree_1(Cell *cell, int top)
     case CT_NUM:
         n = getnum(cell);
         if (n == 1) printf("i");
-        else printf("$%x", n);
+        else printf("[%d]", n);
         break;
     default:
         printf("?");
