@@ -54,6 +54,7 @@ getNextChar(const char **s_ptr)
 
     for(;;) {
         c = *s++;
+        if (!c) return c;
         // ignore whitespace
         if (c == ' ' || c == '\n' || c == '\t') {
             continue;
@@ -262,8 +263,6 @@ PrintTree_1(Cell *cell, int top)
 	    printf("`ki");
 	} else if (fn == Inc_func) {
 	  printf("+");
-	} else if (fn == Read_func) {
-	  printf("R");
         } else {
 	    if (getarg(cell)) printf("`");
             printf("<func:%p>", getfunc(cell));
@@ -273,7 +272,7 @@ PrintTree_1(Cell *cell, int top)
     case CT_NUM:
         n = getnum(cell);
         if (n == 1) printf("i");
-        else printf("$%x ", n);
+        else printf("$%x", n);
         break;
     default:
         printf("?");
