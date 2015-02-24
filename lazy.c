@@ -382,6 +382,18 @@ apply_NumPair(Cell *r, Cell *self, Cell *rhs)
   }
   n = getnum(N);
   if ( n == 0 ) return rhs;
+
+  // special case the Inc operator
+  if (gettype(F) == CT_FUNC && getfunc(F) == Inc_func) {
+      // (N+)x -> (N + x)
+      if (gettype(rhs) == CT_NUM) {
+          int m = getnum(rhs);
+          mknum(r, m+n);
+          return r;
+      }
+  }
+
+  //
   // (NF)x -> F ((N-1)Fx )
   //
   if (n == 1) {
