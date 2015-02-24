@@ -6,10 +6,13 @@ PROPGCC=propeller-elf-gcc
 #PROPGCC=/opt/parallax.default/bin/propeller-elf-gcc
 PROPSRCS=lazy.c FullDuplexSerial.c
 
-all: lazy compiler
+all: lazy lazys compiler
 
 lazy: lazy.c parser.c lazy.h
 	$(CC) -g -DINTERPRETER -o lazy lazy.c parser.c
+
+lazys: lazy.c parser.c lazy.h
+	$(CC) -g -DINTERPRETER -DSMALL -o lazys lazy.c parser.c
 
 compiler: compiler.c parser.c lazy.c lazy.h runtime_bin.h fnmap.h
 	$(CC) -g -o $@ compiler.c parser.c lazy.c

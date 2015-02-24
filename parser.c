@@ -23,6 +23,7 @@ Cell *cK;
 Cell *cS;
 Cell *cI;
 Cell *cC;
+Cell *cInc;
 
 void
 init_parse()
@@ -31,58 +32,137 @@ init_parse()
     cS = alloc_cell();
     cC = alloc_cell();
     cI = alloc_cell();
+    cInc = alloc_cell();
+
     mkfunc(cK, &K_func, NULL);
     mkfunc(cS, &S_func, NULL);
     mkfunc(cC, &C_func, NULL);
+    mkfunc(cInc, &Inc_func, NULL);
     mknum(cI, 1);
 }
 
-Cell *
-parse_part(FILE *f)
+//
+// getNextChar: get next significant character,
+// skipping all whitespace
+//
+int
+getNextChar(const char **s_ptr)
 {
+    const char *s = *s_ptr;
     int c;
-    Cell *r;
 
-    // skip comments and newlines
-    c = fgetc(f);
     for(;;) {
+        c = *s++;
         if (c == ' ' || c == '\n' || c == '\t') {
-            c = fgetc(f);
             continue;
         }
         if (c == '#') {
             do {
-                c = fgetc(f);
-            } while (c != '\n' && c > 0);
+                c = *s++;
+            } while (c && c != '\n');
             continue;
         }
         break;
     }
+    *s_ptr = s;
+    return c;
+}
 
-    if (c < 0) {
+//
+// try to match string "def", skipping non-essential characters like whitespace
+// returns 1 if the strings matched, 0 if not
+// if a match happened, updates s_ptr to point after the match
+// otherwise leaves s_ptr alone
+//
+static int
+match_part(const char **s_ptr, const char *def)
+{
+    const char *s = *s_ptr;
+    int c = 1;
+
+    while (*def != 0) {
+        c = getNextChar(&s);
+        if (c != *def) return 0;
+        def++;
+    }
+    *s_ptr = s;
+    return 1;
+}
+
+//
+// table of optimizations
+// if the input tree matches the string "orig", then actually parse
+// the string "replace"
+//
+struct optimize {
+    const char *orig;
+    const char *replace;
+} opttab[] = {
+    { "``s`k``s``s`kski``s``s`ksk```sii``s``s`kski", "10" },
+    { "``s``s`ksk```s`s``s`ksk``sii``s``s`kski", "65" },
+    { "```sii```sii``s``s`kski", "256" },
+
+};
+
+#define OPTTAB_SIZE (sizeof(opttab)/sizeof(opttab[0]))
+
+//
+// parse a subtree
+// modifies *s_ptr to point to the next text past what we
+// parsed, and returns a pointer to the tree we did parse
+// if "opt" is true, try to optimize the string
+//
+
+static Cell *
+parse_part_opt(const char **s_ptr, bool opt)
+{
+    int c;
+    Cell *r;
+
+    if (opt) {
+        int i;
+
+        // check for an optimization
+        for (i = 0; i < OPTTAB_SIZE; i++) {
+            if (match_part(s_ptr, opttab[i].orig)) {
+                const char *newptr = opttab[i].replace;
+                return parse_part_opt(&newptr, false);
+            }
+        }
+    }
+
+    do {
+        c = getNextChar(s_ptr);
+    } while (c == ')');
+
+    if (c <= 0) {
         fprintf(stderr, "Unexpected EOF\n");
         abort();
     }
+
     if (c >= '0' && c <= '9') {
         int val = 0;
+        const char *s = *s_ptr;
         while (c >= '0' && c <= '9') {
             val = 10*val + (c-'0');
-            c = fgetc(f);
+            c = *s++;
         }
-        ungetc(c, f);
+        *s_ptr = s - 1;
         r = alloc_cell();
         mknum(r, val);
         return r;
     } else {
         switch (c) {
         case '`':
+        case '(':
         {
-            Cell *A = alloc_cell();
+            Cell *A;
             Cell *x, *y;
 
-            x = parse_part(f);
+            A = alloc_cell();
+            x = parse_part(s_ptr);
             push_root(x);
-            y = parse_part(f);
+            y = parse_part(s_ptr);
             pop_root();
             mkapply(A, x, y);
             return A;
@@ -99,12 +179,20 @@ parse_part(FILE *f)
         case 'c': case 'C':
             return cC;
             break;
+        case '+':
+            return cInc;
         default:
             fprintf(stderr, "Invalid character %c\n", c);
             abort();
         }
     }
     return NULL;
+}
+
+Cell *
+parse_part(const char **s_ptr)
+{
+    return parse_part_opt(s_ptr, true);
 }
 
 static void
@@ -124,31 +212,31 @@ PrintTree_1(Cell *cell, int top)
         PrintTree_1(getright(cell), 0);
         break;
     case CT_S2_PAIR:
-        printf("``S");
+        printf("``s");
         PrintTree_1(getleft(cell), 0);
         PrintTree_1(getright(cell), 0);
         break;
     case CT_C2_PAIR:
-        printf("``C");
+        printf("``c");
         PrintTree_1(getleft(cell), 0);
         PrintTree_1(getright(cell), 0);
         break;
     case CT_FUNC:
         fn = getfunc(cell);
         if (fn == K_func) {
-            printf("K");
+            printf("k");
         } else if (fn == S_func) {
-            printf("S");
+            printf("s");
         } else if (fn == C_func) {
-            printf("C");
+            printf("c");
         } else if (fn == K1_func) {
-            printf("`K"); PrintTree_1(getarg(cell), 0);
+            printf("`k"); PrintTree_1(getarg(cell), 0);
         } else if (fn == S1_func) {
-            printf("`S"); PrintTree_1(getarg(cell), 0);
+            printf("`s"); PrintTree_1(getarg(cell), 0);
         } else if (fn == C1_func) {
-            printf("`C"); PrintTree_1(getarg(cell), 0);
+            printf("`c"); PrintTree_1(getarg(cell), 0);
 	} else if (fn == KI_func) {
-	    printf("`KI");
+	    printf("`ki");
 	} else if (fn == Inc_func) {
 	  printf("+");
 	} else if (fn == Read_func) {
@@ -171,10 +259,41 @@ PrintTree_1(Cell *cell, int top)
     if (top) printf("\n");
 }
 
+char *
+alloc_file(FILE *f)
+{
+    size_t curlen, maxlen;
+    char *base;
+    int c;
+
+    curlen = maxlen = 0;
+    base = NULL;
+
+    for(;;) {
+        if (curlen >= maxlen) {
+            maxlen += 1024*1024;
+            base = realloc(base, maxlen);
+            if (!base) {
+                fprintf(stderr, "out of memory\n");
+                exit(2);
+            }
+        }
+        c = fgetc(f);
+        if (c < 0) {
+            base[curlen] = 0;
+            break;
+        }
+        base[curlen++] = c;
+    }
+    return base;
+}
+
 Cell *parse_whole(FILE *f)
 {
     init_parse();
-    g_root = parse_part(f);
+    const char *s = alloc_file(f);
+
+    g_root = parse_part(&s);
 
     // append a lazy read
     {

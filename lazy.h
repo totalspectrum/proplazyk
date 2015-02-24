@@ -81,7 +81,7 @@ void PrintTree(Cell *t);
 
 #ifdef SMALL
 #define NUMCELLS (5500)
-#define ROOT_STACK_SIZE 256
+#define ROOT_STACK_SIZE 400
 #endif
 
 // number of cells to allocate
@@ -130,7 +130,7 @@ void init_parse();
 #else
 extern Cell *g_root;
 extern Cell mem[];
-Cell *parse_part(FILE *f);
+Cell *parse_part(const char **str);
 Cell *parse_whole(FILE *f);
 #endif
 
