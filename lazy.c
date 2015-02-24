@@ -608,7 +608,7 @@ main(int argc, char **argv)
     FILE *f;
 
     if (argc != 2) {
-        fprintf(stderr, "Usage: lazy file.lazy\n");
+        fprintf(stderr, "Usage: %s file.lazy\n", argv[0]);
         return 2;
     }
     f = fopen(argv[1], "r");
@@ -616,6 +616,9 @@ main(int argc, char **argv)
         perror(argv[1]);
         return 1;
     }
+#ifdef SMALL
+    gl_optimize = true;
+#endif
     g_root = parse_whole(f);
 
     return eval_loop(g_root);
