@@ -2,9 +2,10 @@ FullDuplexSerial.[ch]
 *.bin
 *.binary
 *.elf
+*.exe
 *~
 lazy
 lazys
-compiler
+proplazy
 fnmap.h
 runtime_bin.h
