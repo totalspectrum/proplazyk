@@ -22,6 +22,8 @@ Some useful links:
 
 ## Language Basics
 
+(I strongly recommend reading the web resources linked above for clarification on the language!)
+
 There are only functions in Lazy K, and all functions take exactly one argument and return another function. The traditional combinator calculus way of writing this is to write the function and its argument in parentheses, e.g. `(A B)` is the result of applying A to B. All whitespace is optional (and ignored). Comments are started with a pound sign `\#` and continue until the end of line.
 
 The functions built in to Lazy K are:
@@ -34,6 +36,12 @@ Note that `I` is redundant, since for any x `(((S K) K) x)` = `((K x) (K x))` = 
 This version of Lazy K is case insensitive, so `i` and `I` both mean the same thing.
 
 Lazy K also accepts "Unlambda" syntax, where function application is denoted by a backquote (so ``` ``kxy ``` is parsed the same as `((kx)y)`. The astute reader will note that backquote functions just like an open parenthesis, and the close parenthesis is implied because exactly two terms may appear within parentheses.
+
+The "lazy" part of Lazy K refers to its evaluation order, which is lazy. That is, functions are evaluated only when they are needed. This means that (for example) you can write a function which produces an infinite stream of data, but the interpreter will only evaluate as much of that function as it needs at any time.
+
+## The Lazier Compiler
+
+Actually writing programs in Lazy K is challenging (to put it mildly). Roudiak-Gould wrote a translator from a subset of Scheme to Lazy K, called "lazier". It may be found in the lazier/ directory, along with a few notes on usage and some example programs.
 
 ## Propeller Version
 
@@ -65,3 +73,17 @@ There are also host versions of the interpreter. `lazy hello.lazy` will launch t
 There's a Makefile that assumes that you have a native C compiler (gcc) and a version of PropGCC (propeller-elf-gcc) available on your path. You only need PropGCC to rebuild the proplazy compiler; it isn't needed for using proplazy.
 
 You can also cross compile for Windows or Raspberry Pi by doing `make TARGET=win32` or `make TARGET=rpi`.
+
+### Implementation Details
+
+The parser builds a tree of function applications in the obvious way. On the Propeller, each node of the tree takes up 32 bits. 3 bits of this is a tag indicating the type of node, 1 bit is used by the garbage collector, and the other 28 bits is either used for a number or for two 14 bit pointers (since the pointers are always to longs the bottom 2 bits are 0).
+
+## Future Directions
+
+Since there are no side effects in Lazy K, in principle it should be possible use multiple COGs in parallel to evaluate the program. That would be pretty cool.
+
+The garbage collector and cell structure could certainly be used for other functional programming languages (such as Lisp). For that matter it wouldn't be too hard to write a Lisp front end for Lazy K (perhaps building on the lazier framework).
+
+It would be interesting to try change the I/O model of Lazy K for the Propeller. In principle any Propeller program could be considered a function that takes as input time and pin state and produces an output pin state.
+
+Extending Lazier to take advantage of the Propeller specific features (like numbers) might be useful.
