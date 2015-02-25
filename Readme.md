@@ -16,9 +16,11 @@ Lazy K  has just one operation, function application (denoted by backquote), and
 
 Lazy K is a pure functional programming language. The only objects it natively provides are functions. In fact there are just 3 basic functions: s, k, and i (and even i is redundant: it can be expressed in terms of the other two). There are no variables. There are no side effects. It is an incredibly pure language!
 
+The "lazy" part of Lazy K refers to its evaluation order, which is lazy. That is, functions are evaluated only when they are needed. This means that (for example) you can write a function which produces an infinite stream of data, but the interpreter will only evaluate as much of that function as it needs at any time.
+
 Lazy K was designed by Ben Rudiak-Gould.
 
-Some useful links:
+### Some useful links
 
 [Esoteric Languages Entry](http://esolangs.org/wiki/Lazy_K)
 [Original Lazy-K Readme](http://tromp.github.io/cl/lazy-k.html)
@@ -27,6 +29,7 @@ Some useful links:
 
 [Another implementation of Lazy K for Linux](https://github.com/msullivan/LazyK)
 
+### Syntax
 
 (I strongly recommend reading the web resources linked above for clarification on the language!)
 
@@ -41,9 +44,11 @@ Note that `I` is redundant, since for any x `(((S K) K) x)` = `((K x) (K x))` = 
 
 This version of Lazy K is case insensitive, so `i` and `I` both mean the same thing.
 
-Lazy K also accepts "Unlambda" syntax, where function application is denoted by a backquote (so ``` ``kxy ``` is parsed the same as `((kx)y)`. The astute reader will note that backquote functions just like an open parenthesis, and the close parenthesis is implied because exactly two terms may appear within parentheses.
+Lazy K also accepts "Unlambda" syntax, where function application is denoted by a backquote (so ``` ``kxy ``` is parsed the same as `((kx)y)`. The astute reader will note that backquote functions just like an open parenthesis, and the close parenthesis is implied because exactly two terms must appear within parentheses.
 
-The "lazy" part of Lazy K refers to its evaluation order, which is lazy. That is, functions are evaluated only when they are needed. This means that (for example) you can write a function which produces an infinite stream of data, but the interpreter will only evaluate as much of that function as it needs at any time.
+### Input and Output
+
+Lazy K programs are functions from an input list (each list element is a single character) to an output list. End of input/output is indicated by a list element greater than 255. The lists are constructed in the "usual" encoding; each cons pair ```(a b)``` is encoded as the function ```p``` such that ```(p x)``` equals ```((x a) b)```. The individual elements are thus retrieved by applying this function to ```K``` (to get the first element) or ```(K I)``` (to get the second element).
 
 ## The Lazier Compiler
 
