@@ -1,5 +1,10 @@
 # An Implementation of Lazy K for the Propeller
 
+Copyright 2015 Total Spectrum Software, Inc.
+Distributed under the terms of the MIT Licence (see COPYING.MIT).
+The lazier compiler is copyrighted by Ben Rudiak-Gould and distributed
+under the terms of the GPL (see lazier/COPYING).
+
 ## Introduction
 
 Lazy K is a pure functional programming language. The only objects it natively provides are functions. In fact there are just 3 basic functions: s, k, and i (and even i is redundant: it can be expressed in terms of the other two). There are no variables. There are no side effects. It is an incredibly pure language!
