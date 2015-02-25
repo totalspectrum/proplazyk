@@ -1,16 +1,47 @@
+/* Lazy K Interpreter/Compiler
+ *
+ * Copyright 2015 Total Spectrum Software Inc.
+ *
+ * +--------------------------------------------------------------------
+ * ¦  TERMS OF USE: MIT License
+ * +--------------------------------------------------------------------
+ * Permission is hereby granted, free of charge, to any person obtaining
+ * a copy of this software and associated documentation files
+ * (the "Software"), to deal in the Software without restriction,
+ * including without limitation the rights to use, copy, modify, merge,
+ * publish, distribute, sublicense, and/or sell copies of the Software,
+ * and to permit persons to whom the Software is furnished to do so,
+ * subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+ * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ * +--------------------------------------------------------------------
+ */
+
 #ifndef LAZY_H
 #define LAZY_H
 //
 // types of expression evaluation:
-// A = apply
 //
-//  (A (K x)) -> K1_x
-//  (A (K1_x y)) -> x (the one saved in K1 x
-//  (A (N x))  -> (A (x (A (N-1 x))))
-//  (A (S x)) -> S1_x
-//  (A (S1_x y)) -> (S2 (x y))
-//  (A (S2 (x y)) z) -> (A (x z) (y z))
-//
+// basic combinators
+//  (K x) -> K1_x
+//  (K1_x y) -> x (the one saved in K1 x
+//  (S x) -> S1_x
+//  (S1_x y) -> (S2 (x y))
+//  ((S2 (x y)) z) -> ((x z) (y z))
+// number applications
+//  (1 x)  -> x
+//  (N x)  -> (x (N-1 x))
+// cons pair
+//  ((C2 (x y)) z) -> ((z x) y)
 #include <stdbool.h>
 
 typedef enum CellType { 

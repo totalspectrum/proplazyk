@@ -7,6 +7,13 @@ under the terms of the GPL (see lazier/COPYING).
 
 ## Introduction
 
+Imagine a simple computer language -- one without complex data types, or indeed without data types at all. Without variables or side effects. Without even numbers. That language is Lazy K, an implementation of the SKI combinator calculus, and it's now available for the Propeller.
+
+Lazy K  has just one operation, function application (denoted by backquote), and three builtin functions S, K, and I (the last of which is redundant and may be considered syntactic sugar). It is nontheless Turing complete. Provided in the distribution is a translator (called "lazier") from a subset of Scheme to Lazy K.
+
+
+## Language Basics
+
 Lazy K is a pure functional programming language. The only objects it natively provides are functions. In fact there are just 3 basic functions: s, k, and i (and even i is redundant: it can be expressed in terms of the other two). There are no variables. There are no side effects. It is an incredibly pure language!
 
 Lazy K was designed by Ben Rudiak-Gould.
@@ -20,7 +27,6 @@ Some useful links:
 
 [Another implementation of Lazy K for Linux](https://github.com/msullivan/LazyK)
 
-## Language Basics
 
 (I strongly recommend reading the web resources linked above for clarification on the language!)
 
@@ -87,3 +93,5 @@ The garbage collector and cell structure could certainly be used for other funct
 It would be interesting to try change the I/O model of Lazy K for the Propeller. In principle any Propeller program could be considered a function that takes as input time and pin state and produces an output pin state.
 
 Extending Lazier to take advantage of the Propeller specific features (like numbers) might be useful.
+
+The actual runtime system is quite small, but (as presently coded) doesn't fit in COG memory. With some re-arrangement and/or re-coding in assembly we might be able to do that. The garbage collector is about 600 bytes; that could go in a COG of its own. The remaining code is about 3K in C, so with care it might just fit in the 2K of COG RAM. That would speed things up quite a bit.
