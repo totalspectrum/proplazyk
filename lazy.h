@@ -111,8 +111,8 @@ void PrintTree(Cell *t);
 #define PROPELLER_MEM_ADDR (PROPELLER_BASE + 4)
 
 #ifdef SMALL
-#define NUMCELLS (5500)
-#define ROOT_STACK_SIZE 400
+#define NUMCELLS (5200)
+#define ROOT_STACK_SIZE 300
 #endif
 
 // number of cells to allocate

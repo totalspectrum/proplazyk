@@ -54,3 +54,6 @@ fnmap.h: runtime.elf
 clean:
 	rm -f *.elf *.bin *.binary *.o FullDuplexSerial.[ch] fnmap.h *.exe *.pi lazy lazys proplazy
 
+
+proplazy.zip: lazy.exe lazy.pi proplazy.exe proplazy.pi ab.lazy hello.lazy fib.lazy rot13.lazy Readme.md COPYING.MIT
+	zip -r $@ $^ lazier
