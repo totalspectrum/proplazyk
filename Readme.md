@@ -29,16 +29,17 @@ Lazy K was designed by Ben Rudiak-Gould.
 
 [Another implementation of Lazy K for Linux](https://github.com/msullivan/LazyK)
 
-### Syntax
+### Lazy K Syntax
 
 (I strongly recommend reading the web resources linked above for clarification on the language!)
 
-There are only functions in Lazy K, and all functions take exactly one argument and return another function. The traditional combinator calculus way of writing this is to write the function and its argument in parentheses, e.g. `(A B)` is the result of applying A to B. All whitespace is optional (and ignored). Comments are started with a pound sign `\#` and continue until the end of line.
+There are only functions in Lazy K, and all functions take exactly one argument and return another function. The traditional combinator calculus way of writing this is to write the function and its argument in parentheses, e.g. `(A B)` is the result of applying A to B. All whitespace is optional (and ignored). Comments are started with a pound sign `#` and continue until the end of line.
 
 The functions built in to Lazy K are:
-`I` is the identity function: `(I x) -> x`
-`K` is the constant function: `((K x) y) -> x`
-`S` is the function such that `(((S x) y) z) -> ((x z)(y z))`
+
+ - `I` is the identity function: `(I x) -> x`
+ - `K` is the constant function: `((K x) y) -> x`
+ - `S` is the function such that `(((S x) y) z) -> ((x z)(y z))`
 
 Note that `I` is redundant, since for any x `(((S K) K) x)` = `((K x) (K x))` = `x`, so `((S K) K)` = `I`.
 
