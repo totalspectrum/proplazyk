@@ -26,14 +26,14 @@ There are only functions in Lazy K, and all functions take exactly one argument 
 
 The functions built in to Lazy K are:
 `I` is the identity function: `(I x) -> x`
-`K` is the constant function: `((K x) y)` -> x`
+`K` is the constant function: `((K x) y) -> x`
 `S` is the function such that `(((S x) y) z) -> ((x z)(y z))`
 
 Note that `I` is redundant, since for any x `(((S K) K) x)` = `((K x) (K x))` = `x`, so `((S K) K)` = `I`.
 
 This version of Lazy K is case insensitive, so `i` and `I` both mean the same thing.
 
-Lazy K also accepts "Unlambda" syntax, where function application is denoted by a backquote (so `\`\`kxy` is parsed the same as `((kx)y)`.
+Lazy K also accepts "Unlambda" syntax, where function application is denoted by a backquote (so ``` ``kxy ``` is parsed the same as `((kx)y)`. The astute reader will note that backquote functions just like an open parenthesis, and the close parenthesis is implied because exactly two terms may appear within parentheses.
 
 ## Propeller Version
 
