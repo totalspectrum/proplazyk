@@ -22,21 +22,25 @@ Some useful links:
 
 ## Language Basics
 
-There are only functions in Lazy K, and all functions take exactly one argument and return another function. The traditional combinator calculus way of writing this is to write the function and its argument in parentheses, e.g. `(A B)` is the result of applying A to B.
+There are only functions in Lazy K, and all functions take exactly one argument and return another function. The traditional combinator calculus way of writing this is to write the function and its argument in parentheses, e.g. `(A B)` is the result of applying A to B. All whitespace is optional (and ignored). Comments are started with a pound sign `\#` and continue until the end of line.
 
 The functions built in to Lazy K are:
 `I` is the identity function: `(I x) -> x`
 `K` is the constant function: `((K x) y)` -> x`
-`S` is the function such that `(((S x) y) z) -> ((xz)(yz))`
+`S` is the function such that `(((S x) y) z) -> ((x z)(y z))`
 
 Note that `I` is redundant, since for any x `(((S K) K) x)` = `((K x) (K x))` = `x`, so `((S K) K)` = `I`.
+
+This version of Lazy K is case insensitive, so `i` and `I` both mean the same thing.
+
+Lazy K also accepts "Unlambda" syntax, where function application is denoted by a backquote (so `\`\`kxy` is parsed the same as `((kx)y)`.
 
 ## Propeller Version
 
 This propeller version of Lazy K is somewhat different from the standard Lazy K language:
 
 - It does not support the Iota or Jot styles, only the Combinator calculus (CC) and Unlambda style syntax are accepted.
-- The propeller version accepts numbers, though! Numbers are enclosed in square brackets. If the number has a $ in front of it, it's treated as hex, otherwise decimal. Numbers act like the corresponding church numerals, e.g. [1] is identical to i, and [2] acts the same as ``s``s`kski.
+- The propeller version accepts numbers, though! Numbers are enclosed in square brackets. If the number has a $ in front of it, it's treated as hex, otherwise decimal. Numbers act like the corresponding church numerals, e.g. [1] is identical to i, and [2] acts the same as ``` ``s``s`kski ```.
 - The propeller version also understands the letter c to mean a cons operator, i.e. a function such that cxyf = fxy. This is the canonical way to represent lists in the SKI calculus.
 
 ### How to run on the Propeller
