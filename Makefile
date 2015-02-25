@@ -52,4 +52,5 @@ fnmap.h: runtime.elf
 	./mkdefs.sh > fnmap.h
 
 clean:
-	rm -f *.elf *.bin *.binary *.o FullDuplexSerial.[ch] fnmap.h *.exe
+	rm -f *.elf *.bin *.binary *.o FullDuplexSerial.[ch] fnmap.h *.exe *.pi lazy lazys proplazy
+
